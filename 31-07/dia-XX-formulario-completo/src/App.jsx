@@ -107,10 +107,9 @@ function App() {
             {/* Foto de perfil */}
             <div>
               <label>Foto de perfil: </label>
-              <input type="Foto" name="Foto" required />
+              <input type="File" name="Archivo" required />
             </div>
             <br />
-            <button type="submit">Enviar</button>
             {/* Aceptar términos (Uno solo) */}
             <div>
               <input type="checkbox" id="terminos" name="terminos" required />
