@@ -21,6 +21,106 @@ function App() {
             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
           </p>
         </div>
+         <div className="formulario-contenedor" style={{ marginTop: '30px', textAlign: 'left' }}>
+          <h2>Registro de Estudiante</h2>
+          <form>
+            {/* Nombre */}
+            <div>
+              <label>Nombre: </label>
+              <input type="text" name="nombre" required />
+            </div>
+            <br />
+
+            {/* Correo */}
+            <div>
+              <label>Correo: </label>
+              <input type="email" name="correo" required />
+            </div>
+            <br />
+
+            {/* Contraseña */}
+            <div>
+              <label>Contraseña: </label>
+              <input type="password" name="password" required />
+            </div>
+            <br />
+
+            {/* Edad */}
+            <div>
+              <label>Edad: </label>
+              <input type="number" name="edad" />
+            </div>
+            <br />
+
+            {/* Fecha de nacimiento */}
+            <div>
+              <label>Fecha de Nacimiento: </label>
+              <input type="date" name="fechaNacimiento" />
+            </div>
+            <br />
+
+            {/* Nivel de experiencia */}
+            <div>
+              <label>Nivel de experiencia (1-10): </label>
+              <input type="range" name="experiencia" min="1" max="10" />
+            </div>
+            <br />
+
+            {/* Lenguajes que conoce (Varios checkboxes) */}
+            <div>
+              <label>Lenguajes que conoce:</label><br />
+              <input type="checkbox" id="js" name="lenguajes" value="JS" />
+              <label htmlFor="js"> JavaScript</label><br />
+              <input type="checkbox" id="python" name="lenguajes" value="Python" />
+              <label htmlFor="python"> Python</label><br />
+              <input type="checkbox" id="java" name="lenguajes" value="Java" />
+              <label htmlFor="java"> Java</label>
+            </div>
+            <br />
+
+            {/* Modalidad (Grupo de Radio) */}
+            <div>
+              <label>Modalidad:</label><br />
+              <input type="radio" id="presencial" name="modalidad" value="presencial" />
+              <label htmlFor="presencial"> Presencial</label><br />
+              <input type="radio" id="virtual" name="modalidad" value="virtual" />
+              <label htmlFor="virtual"> Virtual</label>
+            </div>
+            <br />
+
+            {/* País (Select con Option) */}
+            <div>
+              <label>País: </label>
+              <select name="pais">
+                <option value="">Selecciona tu país</option>
+                <option value="colombia">Colombia</option>
+                <option value="mexico">México</option>
+              </select>
+            </div>
+            <br />
+            {/* Color favorito*/}
+            <div>
+              <label>Color favorito: </label>
+              <input type="Color" name="Color" required />
+            </div>
+            <br />
+            {/* Foto de perfil */}
+            <div>
+              <label>Foto de perfil: </label>
+              <input type="Foto" name="Foto" required />
+            </div>
+            <br />
+            {/* Aceptar términos (Uno solo) */}
+            <div>
+              <input type="checkbox" id="terminos" name="terminos" required />
+              <label htmlFor="terminos"> Aceptar términos y condiciones</label>
+            </div>
+            <br />
+
+            <button type="submit">Enviar</button>
+          </form>
+        </div>
+        {/* --- AQUÍ TERMINA EL FORMULARIO --- */}
         <button
           type="button"
           className="counter"
