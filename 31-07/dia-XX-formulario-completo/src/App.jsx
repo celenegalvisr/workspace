@@ -110,13 +110,13 @@ function App() {
               <input type="Foto" name="Foto" required />
             </div>
             <br />
+            <button type="submit">Enviar</button>
             {/* Aceptar términos (Uno solo) */}
             <div>
               <input type="checkbox" id="terminos" name="terminos" required />
               <label htmlFor="terminos"> Aceptar términos y condiciones</label>
             </div>
             <br />
-
             <button type="submit">Enviar</button>
           </form>
         </div>
