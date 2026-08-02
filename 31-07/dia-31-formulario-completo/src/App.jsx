@@ -81,6 +81,8 @@ function App() {
                 </div>
                 <br />
 
+                
+
                 {/* Edad */}
                 <div>
                   <label>Edad: </label>
