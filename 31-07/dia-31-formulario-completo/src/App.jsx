@@ -2,7 +2,7 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
-import AuthForm from './components/AuthForm' // 1. IMPORTA TU COMPONENTE (Ajusta la ruta si es necesario)
+import AuthForm from './components/AuthForms' // 1. IMPORTA TU COMPONENTE (Ajusta la ruta si es necesario)
 import './App.css'
 
 function App() {
