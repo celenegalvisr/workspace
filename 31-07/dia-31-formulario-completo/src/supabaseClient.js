@@ -7,4 +7,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error("Error: Las credencias de Supabase no estan configuradas en el archivo .env")
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
