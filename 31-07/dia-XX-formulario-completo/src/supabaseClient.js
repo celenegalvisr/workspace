@@ -11,4 +11,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error("❌ Error crítico: Las credenciales de Supabase no están configuradas en el archivo .env");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
