@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import AuthForm from './components/AuthForms' // Ajusta el path si es necesario
+import { UnderConstruction } from './components/UnderConstruction' // Importación del componente
 import './App.css'
 
 function App() {
@@ -10,7 +11,7 @@ function App() {
   const [count, setCount] = useState(0)
   const [usuario, setUsuario] = useState(null)
   
-  // Estado para controlar la sección o vista actual ('inicio' | 'formulario')
+  // Estado para controlar la sección o vista actual ('inicio' | 'formulario' | 'reportes')
   const [vistaActual, setVistaActual] = useState('inicio')
 
   // Estado local para los campos del formulario de estudiante
@@ -131,6 +132,19 @@ function App() {
               📝 Formulario Estudiante
             </button>
 
+            {/* Botón añadido para ir a Reportes */}
+            <button
+              onClick={() => setVistaActual('reportes')}
+              className="btn btn-sm text-start w-100 fw-bold mb-2"
+              style={{
+                backgroundColor: vistaActual === 'reportes' ? '#0dcaf0' : 'transparent',
+                color: vistaActual === 'reportes' ? '#000' : '#fff',
+                border: 'none'
+              }}
+            >
+              📊 Módulo Reportes
+            </button>
+
             <button
               onClick={handleLogout}
               className="btn btn-danger btn-sm w-100 fw-bold mt-2"
@@ -192,6 +206,19 @@ function App() {
                 }}
               >
                 Registro Estudiante
+              </button>
+
+              <button
+                onClick={() => setVistaActual('reportes')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: vistaActual === 'reportes' ? '#646cff' : '#aaa',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                Reportes
               </button>
 
               <span style={{ fontSize: '14px', color: '#28a745' }}>
@@ -452,6 +479,14 @@ function App() {
               </div>
             )}
           </section>
+        )}
+
+        {/* VISTA 3: MÓDULO EN CONSTRUCCIÓN */}
+        {vistaActual === 'reportes' && (
+          <UnderConstruction 
+            titulo="Módulo de Reportes" 
+            mensaje="Esta sección estará disponible en la próxima versión de AcademiaApp." 
+          />
         )}
 
         {/* Contador Vite de prueba */}
