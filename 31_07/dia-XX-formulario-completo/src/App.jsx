@@ -235,23 +235,25 @@ function App() {
 
   const navegarConRol = (vista, rolesPermitidos) => {
     if (!usuario) {
-      alert('Debes iniciar sesión para acceder a esta sección.')
-      setVistaActual('inicio')
-      return
+     alert('Debes iniciar sesión para acceder a esta sección.')
+     setVistaActual('inicio')
+     return
     }
 
     if (!tieneRol(rolesPermitidos)) {
-      alert(
-        `No tienes permisos para acceder a esta sección. Rol actual: ${
-          rolUsuario || 'no definido'
-        }`
-      )
-      return
-    }
+     const rolActual = rolUsuario || 'no definido'
 
-    setVistaActual(vista)
+     alert(
+      'No tienes permisos para acceder a esta sección. ' +
+      'Rol actual: ' +
+      rolActual
+    )
+
+    return
   }
 
+  setVistaActual(vista)
+}
   // ======================================================
   // RENDER
   // ======================================================
