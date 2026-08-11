@@ -1,4 +1,3 @@
-```jsx
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
@@ -691,4 +690,3 @@ function AuthForms({ onLoginSuccess }) {
 }
 
 export default AuthForms
-```
