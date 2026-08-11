@@ -679,8 +679,12 @@ function AuthForms({ onLoginSuccess }) {
               <option value="contratista">
                 👤 Contratista
               </option>
+              
+              <option value="empleado">
+               👷 Empleado
+              </option>
+              
             </select>
-
             <div className="form-text">
               Los nuevos registros se crean como contratistas.
             </div>
