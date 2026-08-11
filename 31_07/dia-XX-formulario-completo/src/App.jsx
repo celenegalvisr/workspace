@@ -1,4 +1,3 @@
-```jsx
 import { useState } from 'react'
 import AuthForm from './components/AuthForms'
 import { UnderConstruction } from './components/UnderConstruction'
@@ -1682,4 +1681,3 @@ function AccesoDenegado() {
 }
 
 export default App
-```
