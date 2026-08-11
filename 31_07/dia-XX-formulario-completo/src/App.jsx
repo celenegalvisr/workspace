@@ -5,35 +5,29 @@ import { UnderConstruction } from './components/UnderConstruction'
 import './App.css'
 
 // ======================================================
-// APP PRINCIPAL - EMPLEOLINK
+// EMPLEOLINK
+// Sistema de gestión de oportunidades laborales
+//
+// ROLES:
+// - administrador
+// - empleado
+// - contratista
 // ======================================================
 
 function App() {
-  // ======================================================
-  // ESTADOS GENERALES
-  // ======================================================
+  // ====================================================
+  // ESTADOS
+  // ====================================================
 
   const [usuario, setUsuario] = useState(null)
 
-  // Vista actual del sistema
-  const [vistaActual, setVistaActual] = useState('inicio')
+  const [vistaActual, setVistaActual] =
+    useState('inicio')
 
-  // ======================================================
-  // DATOS DEL FORMULARIO DE VACANTE
-  // Estos campos corresponden a la tabla "vacante"
-  // ======================================================
-
-  const [vacanteData, setVacanteData] = useState({
-    titulo: '',
-    salario: '',
-    descripcion: '',
-    cod_empresa: '',
-  })
-
-  // ======================================================
-  // DATOS DEL FORMULARIO DE EMPRESA
-  // Corresponden a la tabla "empresa"
-  // ======================================================
+  // ====================================================
+  // DATOS DE EMPRESA
+  // Tabla: empresa
+  // ====================================================
 
   const [empresaData, setEmpresaData] = useState({
     cod_empresa: '',
@@ -41,68 +35,71 @@ function App() {
     nit_rut: '',
   })
 
-  // ======================================================
-  // DATOS DEL PERFIL DEL CONTRATISTA
-  // Corresponden a la tabla "candidato"
-  // ======================================================
+  // ====================================================
+  // DATOS DE VACANTE
+  // Tabla: vacante
+  // ====================================================
 
-  const [candidatoData, setCandidatoData] = useState({
-    num_documento: '',
-    nombre: '',
-    apellido: '',
-    telefono: '',
-    perfil: '',
-    correo: '',
+  const [vacanteData, setVacanteData] = useState({
+    cod_empresa: '',
+    titulo: '',
+    salario: '',
+    descripcion: '',
   })
 
-  // ======================================================
-  // MANEJO DEL LOGIN
-  // ======================================================
+  // ====================================================
+  // DATOS DEL CONTRATISTA
+  // Tabla: candidato
+  // ====================================================
+
+  const [candidatoData, setCandidatoData] =
+    useState({
+      num_documento: '',
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      perfil: '',
+      correo: '',
+    })
+
+  // ====================================================
+  // LOGIN
+  // ====================================================
 
   const handleLoginSuccess = (user) => {
+    console.log(
+      '✅ Usuario autenticado:',
+      user
+    )
+
+    console.log(
+      '🔐 Rol:',
+      user?.rol
+    )
+
     setUsuario(user)
-
-    /*
-      Después del login vamos inicialmente a Inicio.
-
-      El rol puede venir de diferentes lugares dependiendo
-      de cómo esté construido AuthForms.
-
-      Ejemplo esperado:
-
-      user = {
-        id: '...',
-        email: '...',
-        rol: 'administrador'
-      }
-
-      Si AuthForms todavía no agrega el rol,
-      el sistema permanecerá en Inicio.
-    */
-
     setVistaActual('inicio')
   }
 
-  // ======================================================
-  // CERRAR SESIÓN
-  // ======================================================
+  // ====================================================
+  // LOGOUT
+  // ====================================================
 
   const handleLogout = () => {
     setUsuario(null)
     setVistaActual('inicio')
 
-    // Limpiamos los formularios
-    setVacanteData({
-      titulo: '',
-      salario: '',
-      descripcion: '',
-      cod_empresa: '',
-    })
-
     setEmpresaData({
       cod_empresa: '',
       nombre_empresa: '',
       nit_rut: '',
+    })
+
+    setVacanteData({
+      cod_empresa: '',
+      titulo: '',
+      salario: '',
+      descripcion: '',
     })
 
     setCandidatoData({
@@ -115,38 +112,43 @@ function App() {
     })
   }
 
-  // ======================================================
-  // OBTENER ROL DEL USUARIO
-  // ======================================================
+  // ====================================================
+  // OBTENER ROL
+  // ====================================================
 
   const obtenerRol = () => {
     if (!usuario) {
       return null
     }
 
-    /*
-      Se contemplan varias posibilidades para que sea
-      compatible con diferentes versiones de AuthForms.
+    if (usuario.rol) {
+      return String(usuario.rol)
+        .toLowerCase()
+        .trim()
+    }
 
-      Prioridad:
-      1. usuario.rol
-      2. usuario.user_metadata.rol
-      3. usuario.role
-    */
+    if (usuario.user_metadata?.rol) {
+      return String(
+        usuario.user_metadata.rol
+      )
+        .toLowerCase()
+        .trim()
+    }
 
-    return (
-      usuario.rol ||
-      usuario.user_metadata?.rol ||
-      usuario.role ||
-      null
-    )
+    if (usuario.role) {
+      return String(usuario.role)
+        .toLowerCase()
+        .trim()
+    }
+
+    return null
   }
 
   const rolUsuario = obtenerRol()
 
-  // ======================================================
-  // VERIFICAR SI EL USUARIO TIENE UN ROL
-  // ======================================================
+  // ====================================================
+  // VERIFICAR ROL
+  // ====================================================
 
   const tieneRol = (rolesPermitidos) => {
     if (!usuario) {
@@ -157,35 +159,48 @@ function App() {
       return false
     }
 
-    return rolesPermitidos.includes(rolUsuario)
-  }
-
-  // ======================================================
-  // MANEJO DEL FORMULARIO DE VACANTE
-  // ======================================================
-
-  const handleVacanteChange = (e) => {
-    const { name, value } = e.target
-
-    setVacanteData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handleVacanteSubmit = (e) => {
-    e.preventDefault()
-
-    console.log('Datos de la vacante:', vacanteData)
-
-    alert(
-      'Vacante preparada correctamente. Falta conectar este formulario con Supabase.'
+    return rolesPermitidos.includes(
+      rolUsuario
     )
   }
 
-  // ======================================================
-  // MANEJO DEL FORMULARIO DE EMPRESA
-  // ======================================================
+  // ====================================================
+  // NAVEGACIÓN PROTEGIDA
+  // ====================================================
+
+  const navegarConRol = (
+    vista,
+    rolesPermitidos
+  ) => {
+    if (!usuario) {
+      alert(
+        'Debes iniciar sesión para acceder a esta sección.'
+      )
+
+      setVistaActual('inicio')
+
+      return
+    }
+
+    if (!tieneRol(rolesPermitidos)) {
+      const rolActual =
+        rolUsuario || 'no definido'
+
+      alert(
+        'No tienes permisos para acceder a esta sección. ' +
+          'Rol actual: ' +
+          rolActual
+      )
+
+      return
+    }
+
+    setVistaActual(vista)
+  }
+
+  // ====================================================
+  // FORMULARIO EMPRESA
+  // ====================================================
 
   const handleEmpresaChange = (e) => {
     const { name, value } = e.target
@@ -199,16 +214,45 @@ function App() {
   const handleEmpresaSubmit = (e) => {
     e.preventDefault()
 
-    console.log('Datos de la empresa:', empresaData)
+    console.log(
+      '🏢 Datos empresa:',
+      empresaData
+    )
 
     alert(
-      'Empresa preparada correctamente. Falta conectar este formulario con Supabase.'
+      'Empresa preparada para guardar en Supabase.'
     )
   }
 
-  // ======================================================
-  // MANEJO DEL PERFIL DEL CONTRATISTA
-  // ======================================================
+  // ====================================================
+  // FORMULARIO VACANTE
+  // ====================================================
+
+  const handleVacanteChange = (e) => {
+    const { name, value } = e.target
+
+    setVacanteData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleVacanteSubmit = (e) => {
+    e.preventDefault()
+
+    console.log(
+      '📝 Datos vacante:',
+      vacanteData
+    )
+
+    alert(
+      'Vacante preparada para guardar en Supabase.'
+    )
+  }
+
+  // ====================================================
+  // FORMULARIO CONTRATISTA
+  // ====================================================
 
   const handleCandidatoChange = (e) => {
     const { name, value } = e.target
@@ -222,41 +266,19 @@ function App() {
   const handleCandidatoSubmit = (e) => {
     e.preventDefault()
 
-    console.log('Datos del contratista:', candidatoData)
+    console.log(
+      '👤 Datos contratista:',
+      candidatoData
+    )
 
     alert(
-      'Perfil preparado correctamente. Falta conectar este formulario con Supabase.'
+      'Perfil preparado para guardar en Supabase.'
     )
   }
 
-  // ======================================================
-  // FUNCIÓN PARA NAVEGAR A UNA VISTA PROTEGIDA
-  // ======================================================
-
-  const navegarConRol = (vista, rolesPermitidos) => {
-    if (!usuario) {
-     alert('Debes iniciar sesión para acceder a esta sección.')
-     setVistaActual('inicio')
-     return
-    }
-
-    if (!tieneRol(rolesPermitidos)) {
-     const rolActual = rolUsuario || 'no definido'
-
-     alert(
-      'No tienes permisos para acceder a esta sección. ' +
-      'Rol actual: ' +
-      rolActual
-    )
-
-    return
-   }
-
-   setVistaActual(vista)
- }
-  // ======================================================
+  // ====================================================
   // RENDER
-  // ======================================================
+  // ====================================================
 
   return (
     <>
@@ -273,12 +295,13 @@ function App() {
           backgroundColor: '#212529',
           padding: '15px',
           borderRadius: '10px',
-          boxShadow: '0px 4px 15px rgba(0,0,0,0.5)',
+          boxShadow:
+            '0px 4px 15px rgba(0,0,0,0.5)',
           border: '1px solid #495057',
           display: 'flex',
           flexDirection: 'column',
           gap: '10px',
-          width: '220px',
+          width: '230px',
           textAlign: 'left',
         }}
       >
@@ -294,16 +317,23 @@ function App() {
           🧭 Menú de Acceso
         </span>
 
-        {/* ================= INICIO ================= */}
+        {/* INICIO */}
 
         <button
           type="button"
-          onClick={() => setVistaActual('inicio')}
+          onClick={() =>
+            setVistaActual('inicio')
+          }
           className="btn btn-sm text-start w-100 fw-bold"
           style={{
             backgroundColor:
-              vistaActual === 'inicio' ? '#0dcaf0' : 'transparent',
-            color: vistaActual === 'inicio' ? '#000' : '#fff',
+              vistaActual === 'inicio'
+                ? '#0dcaf0'
+                : 'transparent',
+            color:
+              vistaActual === 'inicio'
+                ? '#000'
+                : '#fff',
             border: 'none',
           }}
         >
@@ -311,17 +341,18 @@ function App() {
         </button>
 
         {/* ==================================================
-            OPCIONES PARA USUARIOS AUTENTICADOS
+            USUARIO AUTENTICADO
         ================================================== */}
 
         {usuario ? (
           <div
             style={{
-              borderTop: '1px solid #495057',
+              borderTop:
+                '1px solid #495057',
               paddingTop: '10px',
             }}
           >
-            {/* Información del usuario */}
+            {/* INFORMACIÓN */}
 
             <div
               style={{
@@ -335,7 +366,8 @@ function App() {
               <br />
 
               <strong>
-                {usuario.email || 'Usuario autenticado'}
+                {usuario.email ||
+                  'Usuario autenticado'}
               </strong>
 
               <br />
@@ -343,32 +375,42 @@ function App() {
               <span
                 style={{
                   color: '#ffc107',
-                  textTransform: 'capitalize',
+                  textTransform:
+                    'capitalize',
                 }}
               >
-                Rol: {rolUsuario || 'No definido'}
+                Rol:{' '}
+                {rolUsuario ||
+                  'No definido'}
               </span>
             </div>
 
             {/* ==================================================
-                MENÚ DEL CONTRATISTA
+                CONTRATISTA
             ================================================== */}
 
-            {tieneRol(['contratista']) && (
+            {tieneRol([
+              'contratista',
+            ]) && (
               <>
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('perfilContratista', ['contratista'])
+                    navegarConRol(
+                      'perfilContratista',
+                      ['contratista']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'perfilContratista'
+                      vistaActual ===
+                      'perfilContratista'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'perfilContratista'
+                      vistaActual ===
+                      'perfilContratista'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -380,16 +422,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('vacantes', ['contratista'])
+                    navegarConRol(
+                      'vacantes',
+                      ['contratista']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'vacantes'
+                      vistaActual ===
+                      'vacantes'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'vacantes'
+                      vistaActual ===
+                      'vacantes'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -401,16 +448,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('postulaciones', ['contratista'])
+                    navegarConRol(
+                      'postulaciones',
+                      ['contratista']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'postulaciones'
+                      vistaActual ===
+                      'postulaciones'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'postulaciones'
+                      vistaActual ===
+                      'postulaciones'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -422,24 +474,31 @@ function App() {
             )}
 
             {/* ==================================================
-                MENÚ DEL EMPLEADO
+                EMPLEADO
             ================================================== */}
 
-            {tieneRol(['empleado']) && (
+            {tieneRol([
+              'empleado',
+            ]) && (
               <>
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('empresa', ['empleado'])
+                    navegarConRol(
+                      'empresa',
+                      ['empleado']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'empresa'
+                      vistaActual ===
+                      'empresa'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'empresa'
+                      vistaActual ===
+                      'empresa'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -451,16 +510,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('vacante', ['empleado'])
+                    navegarConRol(
+                      'vacante',
+                      ['empleado']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'vacante'
+                      vistaActual ===
+                      'vacante'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'vacante'
+                      vistaActual ===
+                      'vacante'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -472,16 +536,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('postulantes', ['empleado'])
+                    navegarConRol(
+                      'postulantes',
+                      ['empleado']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'postulantes'
+                      vistaActual ===
+                      'postulantes'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'postulantes'
+                      vistaActual ===
+                      'postulantes'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -493,24 +562,31 @@ function App() {
             )}
 
             {/* ==================================================
-                MENÚ DEL ADMINISTRADOR
+                ADMINISTRADOR
             ================================================== */}
 
-            {tieneRol(['administrador']) && (
+            {tieneRol([
+              'administrador',
+            ]) && (
               <>
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('usuarios', ['administrador'])
+                    navegarConRol(
+                      'usuarios',
+                      ['administrador']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'usuarios'
+                      vistaActual ===
+                      'usuarios'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'usuarios'
+                      vistaActual ===
+                      'usuarios'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -522,16 +598,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() =>
-                    navegarConRol('reportes', ['administrador'])
+                    navegarConRol(
+                      'reportes',
+                      ['administrador']
+                    )
                   }
                   className="btn btn-sm text-start w-100 fw-bold mb-2"
                   style={{
                     backgroundColor:
-                      vistaActual === 'reportes'
+                      vistaActual ===
+                      'reportes'
                         ? '#0dcaf0'
                         : 'transparent',
                     color:
-                      vistaActual === 'reportes'
+                      vistaActual ===
+                      'reportes'
                         ? '#000'
                         : '#fff',
                     border: 'none',
@@ -542,7 +623,7 @@ function App() {
               </>
             )}
 
-            {/* ================= CERRAR SESIÓN ================= */}
+            {/* CERRAR SESIÓN */}
 
             <button
               type="button"
@@ -555,7 +636,8 @@ function App() {
         ) : (
           <div
             style={{
-              borderTop: '1px solid #495057',
+              borderTop:
+                '1px solid #495057',
               paddingTop: '10px',
               textAlign: 'center',
             }}
@@ -567,7 +649,8 @@ function App() {
                 margin: 0,
               }}
             >
-              🔒 Inicia sesión para desbloquear las opciones.
+              🔒 Inicia sesión para
+              desbloquear las opciones.
             </p>
           </div>
         )}
@@ -580,12 +663,14 @@ function App() {
       <nav
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent:
+            'space-between',
           alignItems: 'center',
           padding: '15px 30px',
-          paddingLeft: '260px',
+          paddingLeft: '280px',
           backgroundColor: '#1a1a1a',
-          borderBottom: '1px solid #333',
+          borderBottom:
+            '1px solid #333',
           position: 'sticky',
           top: 0,
           zIndex: 1000,
@@ -611,7 +696,9 @@ function App() {
         >
           <button
             type="button"
-            onClick={() => setVistaActual('inicio')}
+            onClick={() =>
+              setVistaActual('inicio')
+            }
             style={{
               background: 'none',
               border: 'none',
@@ -626,71 +713,92 @@ function App() {
             Inicio
           </button>
 
+          {usuario &&
+            tieneRol([
+              'contratista',
+            ]) && (
+              <button
+                type="button"
+                onClick={() =>
+                  navegarConRol(
+                    'vacantes',
+                    ['contratista']
+                  )
+                }
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color:
+                    vistaActual ===
+                    'vacantes'
+                      ? '#646cff'
+                      : '#aaa',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Vacantes
+              </button>
+            )}
+
+          {usuario &&
+            tieneRol([
+              'empleado',
+            ]) && (
+              <button
+                type="button"
+                onClick={() =>
+                  navegarConRol(
+                    'vacante',
+                    ['empleado']
+                  )
+                }
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color:
+                    vistaActual ===
+                    'vacante'
+                      ? '#646cff'
+                      : '#aaa',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Nueva Vacante
+              </button>
+            )}
+
+          {usuario &&
+            tieneRol([
+              'administrador',
+            ]) && (
+              <button
+                type="button"
+                onClick={() =>
+                  navegarConRol(
+                    'usuarios',
+                    ['administrador']
+                  )
+                }
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color:
+                    vistaActual ===
+                    'usuarios'
+                      ? '#646cff'
+                      : '#aaa',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                Usuarios
+              </button>
+            )}
+
           {usuario && (
             <>
-              {tieneRol(['contratista']) && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navegarConRol('vacantes', ['contratista'])
-                  }
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color:
-                      vistaActual === 'vacantes'
-                        ? '#646cff'
-                        : '#aaa',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Vacantes
-                </button>
-              )}
-
-              {tieneRol(['empleado']) && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navegarConRol('vacante', ['empleado'])
-                  }
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color:
-                      vistaActual === 'vacante'
-                        ? '#646cff'
-                        : '#aaa',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Nueva Vacante
-                </button>
-              )}
-
-              {tieneRol(['administrador']) && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navegarConRol('usuarios', ['administrador'])
-                  }
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color:
-                      vistaActual === 'usuarios'
-                        ? '#646cff'
-                        : '#aaa',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Usuarios
-                </button>
-              )}
-
               <span
                 style={{
                   fontSize: '13px',
@@ -720,12 +828,10 @@ function App() {
         className="container my-4"
         style={{
           maxWidth: '900px',
-          marginLeft: 'auto',
-          marginRight: 'auto',
         }}
       >
         {/* ==================================================
-            VISTA INICIO
+            INICIO
         ================================================== */}
 
         {vistaActual === 'inicio' && (
@@ -740,12 +846,14 @@ function App() {
                 🎓
               </div>
 
-              <h1 className="mb-3">
+              <h1>
                 EmpleoLink
               </h1>
 
               <p className="lead text-secondary">
-                Conectando personas, empresas y oportunidades laborales.
+                Conectando personas,
+                empresas y oportunidades
+                laborales.
               </p>
 
               <div
@@ -758,42 +866,51 @@ function App() {
                   {!usuario ? (
                     <>
                       <h4 className="mb-3">
-                        🔐 Iniciar Sesión
+                        🔐 Acceso al sistema
                       </h4>
 
                       <p className="text-secondary">
-                        Ingresa al sistema para acceder a las funciones
-                        correspondientes a tu rol.
+                        Inicia sesión o crea
+                        una cuenta para
+                        continuar.
                       </p>
 
                       <AuthForm
-                        onLoginSuccess={handleLoginSuccess}
+                        onLoginSuccess={
+                          handleLoginSuccess
+                        }
                       />
                     </>
                   ) : (
                     <>
                       <h4 className="text-success">
-                        🎉 Sesión activa
+                        🎉 Bienvenido a
+                        EmpleoLink
                       </h4>
 
-                      <p className="mt-3">
-                        Bienvenido:
+                      <p className="mt-3 mb-1">
+                        Usuario:
                       </p>
 
                       <strong>
                         {usuario.email}
                       </strong>
 
-                      <p className="mt-2">
-                        Rol:{' '}
-                        <span className="badge bg-primary">
-                          {rolUsuario || 'No definido'}
-                        </span>
+                      <p className="mt-3 mb-1">
+                        Rol:
                       </p>
 
-                      <p className="text-secondary mt-3">
-                        Utiliza el menú lateral para acceder a las
-                        funcionalidades disponibles.
+                      <span className="badge bg-primary fs-6">
+                        {rolUsuario ||
+                          'No definido'}
+                      </span>
+
+                      <p className="text-secondary mt-4">
+                        Utiliza el menú
+                        lateral para
+                        acceder a las
+                        funciones de tu
+                        rol.
                       </p>
                     </>
                   )}
@@ -804,23 +921,30 @@ function App() {
         )}
 
         {/* ==================================================
-            VISTA PERFIL CONTRATISTA
+            PERFIL CONTRATISTA
         ================================================== */}
 
-        {vistaActual === 'perfilContratista' && (
+        {vistaActual ===
+          'perfilContratista' && (
           <section>
-            {!tieneRol(['contratista']) ? (
+            {!tieneRol([
+              'contratista',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div className="card shadow p-4">
                 <h2 className="mb-4">
-                  👤 Perfil del Contratista
+                  👤 Mi Perfil
                 </h2>
 
-                <form onSubmit={handleCandidatoSubmit}>
+                <form
+                  onSubmit={
+                    handleCandidatoSubmit
+                  }
+                >
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">
+                      <label className="form-label fw-bold">
                         Número de documento
                       </label>
 
@@ -828,14 +952,18 @@ function App() {
                         type="text"
                         name="num_documento"
                         className="form-control"
-                        value={candidatoData.num_documento}
-                        onChange={handleCandidatoChange}
+                        value={
+                          candidatoData.num_documento
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
                         required
                       />
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">
+                      <label className="form-label fw-bold">
                         Correo
                       </label>
 
@@ -843,14 +971,18 @@ function App() {
                         type="email"
                         name="correo"
                         className="form-control"
-                        value={candidatoData.correo}
-                        onChange={handleCandidatoChange}
+                        value={
+                          candidatoData.correo
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
                         required
                       />
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">
+                      <label className="form-label fw-bold">
                         Nombre
                       </label>
 
@@ -858,14 +990,18 @@ function App() {
                         type="text"
                         name="nombre"
                         className="form-control"
-                        value={candidatoData.nombre}
-                        onChange={handleCandidatoChange}
+                        value={
+                          candidatoData.nombre
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
                         required
                       />
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">
+                      <label className="form-label fw-bold">
                         Apellido
                       </label>
 
@@ -873,14 +1009,18 @@ function App() {
                         type="text"
                         name="apellido"
                         className="form-control"
-                        value={candidatoData.apellido}
-                        onChange={handleCandidatoChange}
+                        value={
+                          candidatoData.apellido
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
                         required
                       />
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">
+                      <label className="form-label fw-bold">
                         Teléfono
                       </label>
 
@@ -888,30 +1028,38 @@ function App() {
                         type="tel"
                         name="telefono"
                         className="form-control"
-                        value={candidatoData.telefono}
-                        onChange={handleCandidatoChange}
+                        value={
+                          candidatoData.telefono
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
                       />
                     </div>
 
-                    <div className="col-12 mb-3">
-                      <label className="form-label">
+                    <div className="col-12 mb-4">
+                      <label className="form-label fw-bold">
                         Perfil profesional
                       </label>
 
                       <textarea
                         name="perfil"
                         className="form-control"
-                        rows="4"
-                        value={candidatoData.perfil}
-                        onChange={handleCandidatoChange}
-                        placeholder="Describe brevemente tu perfil profesional..."
+                        rows="5"
+                        value={
+                          candidatoData.perfil
+                        }
+                        onChange={
+                          handleCandidatoChange
+                        }
+                        placeholder="Describe tu perfil profesional..."
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="btn btn-primary w-100"
+                    className="btn btn-primary w-100 fw-bold"
                   >
                     💾 Guardar Perfil
                   </button>
@@ -922,12 +1070,15 @@ function App() {
         )}
 
         {/* ==================================================
-            VISTA VACANTES - CONTRATISTA
+            VACANTES
         ================================================== */}
 
-        {vistaActual === 'vacantes' && (
+        {vistaActual ===
+          'vacantes' && (
           <section>
-            {!tieneRol(['contratista']) ? (
+            {!tieneRol([
+              'contratista',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div>
@@ -936,27 +1087,32 @@ function App() {
                 </h2>
 
                 <div className="alert alert-info">
-                  <strong>Información:</strong> aquí se mostrarán
-                  las vacantes almacenadas en la tabla{' '}
-                  <code>vacante</code>.
+                  Las vacantes se
+                  consultarán desde
+                  <code>vacante</code> y
+                  <code>empresa</code>.
                 </div>
 
-                <div className="card shadow-sm mb-3">
+                <div className="card shadow-sm">
                   <div className="card-body">
                     <h5>
-                      💻 Desarrollador de Software
+                      💻 Ejemplo de vacante
                     </h5>
 
                     <p>
-                      Vacante de ejemplo para visualizar la
-                      estructura del módulo.
+                      Esta tarjeta será
+                      reemplazada por los
+                      registros reales de
+                      Supabase.
                     </p>
 
                     <button
                       type="button"
                       className="btn btn-primary"
                       onClick={() =>
-                        setVistaActual('detalleVacante')
+                        setVistaActual(
+                          'detalleVacante'
+                        )
                       }
                     >
                       Ver detalle
@@ -972,41 +1128,54 @@ function App() {
             DETALLE DE VACANTE
         ================================================== */}
 
-        {vistaActual === 'detalleVacante' && (
+        {vistaActual ===
+          'detalleVacante' && (
           <section>
-            {!tieneRol(['contratista']) ? (
+            {!tieneRol([
+              'contratista',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div className="card shadow p-4">
                 <h2>
-                  💻 Detalle de Vacante
+                  💼 Detalle de Vacante
                 </h2>
 
                 <hr />
 
                 <h4>
-                  Desarrollador de Software
+                  Desarrollador de
+                  Software
                 </h4>
 
                 <p>
-                  Información detallada de la vacante.
+                  Información de la
+                  vacante.
                 </p>
 
                 <p>
-                  <strong>Salario:</strong>{' '}
-                  Se cargará desde Supabase.
+                  <strong>
+                    Salario:
+                  </strong>{' '}
+                  Se cargará desde
+                  Supabase.
                 </p>
 
                 <p>
-                  <strong>Descripción:</strong>{' '}
-                  Se cargará desde Supabase.
+                  <strong>
+                    Descripción:
+                  </strong>{' '}
+                  Se cargará desde
+                  Supabase.
                 </p>
 
                 <button
                   type="button"
                   className="btn btn-success"
                   onClick={() =>
-                    setVistaActual('postularse')
+                    setVistaActual(
+                      'postularse'
+                    )
                   }
                 >
                   🚀 Postularme
@@ -1020,9 +1189,12 @@ function App() {
             POSTULARSE
         ================================================== */}
 
-        {vistaActual === 'postularse' && (
+        {vistaActual ===
+          'postularse' && (
           <section>
-            {!tieneRol(['contratista']) ? (
+            {!tieneRol([
+              'contratista',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div className="card shadow p-4 text-center">
@@ -1031,7 +1203,8 @@ function App() {
                 </h2>
 
                 <p className="text-secondary">
-                  Estás a punto de realizar una postulación.
+                  Confirma tu postulación
+                  a esta vacante.
                 </p>
 
                 <button
@@ -1039,7 +1212,7 @@ function App() {
                   className="btn btn-success"
                   onClick={() =>
                     alert(
-                      'Postulación preparada. Falta conectarla con la tabla postulaciones.'
+                      'Postulación preparada para guardar en postulaciones.'
                     )
                   }
                 >
@@ -1054,9 +1227,12 @@ function App() {
             MIS POSTULACIONES
         ================================================== */}
 
-        {vistaActual === 'postulaciones' && (
+        {vistaActual ===
+          'postulaciones' && (
           <section>
-            {!tieneRol(['contratista']) ? (
+            {!tieneRol([
+              'contratista',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div>
@@ -1065,9 +1241,12 @@ function App() {
                 </h2>
 
                 <div className="alert alert-info">
-                  Aquí se mostrarán las postulaciones del
-                  contratista desde la tabla{' '}
-                  <code>postulaciones</code>.
+                  Aquí aparecerán las
+                  postulaciones de la tabla
+                  <code>
+                    postulaciones
+                  </code>
+                  .
                 </div>
               </div>
             )}
@@ -1075,12 +1254,15 @@ function App() {
         )}
 
         {/* ==================================================
-            REGISTRO DE EMPRESA
+            REGISTRAR EMPRESA
         ================================================== */}
 
-        {vistaActual === 'empresa' && (
+        {vistaActual ===
+          'empresa' && (
           <section>
-            {!tieneRol(['empleado']) ? (
+            {!tieneRol([
+              'empleado',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div className="card shadow p-4">
@@ -1088,9 +1270,13 @@ function App() {
                   🏢 Registrar Empresa
                 </h2>
 
-                <form onSubmit={handleEmpresaSubmit}>
+                <form
+                  onSubmit={
+                    handleEmpresaSubmit
+                  }
+                >
                   <div className="mb-3">
-                    <label className="form-label">
+                    <label className="form-label fw-bold">
                       Código de empresa
                     </label>
 
@@ -1098,29 +1284,37 @@ function App() {
                       type="text"
                       name="cod_empresa"
                       className="form-control"
-                      value={empresaData.cod_empresa}
-                      onChange={handleEmpresaChange}
+                      value={
+                        empresaData.cod_empresa
+                      }
+                      onChange={
+                        handleEmpresaChange
+                      }
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">
-                      Nombre de la empresa
+                    <label className="form-label fw-bold">
+                      Nombre de empresa
                     </label>
 
                     <input
                       type="text"
                       name="nombre_empresa"
                       className="form-control"
-                      value={empresaData.nombre_empresa}
-                      onChange={handleEmpresaChange}
+                      value={
+                        empresaData.nombre_empresa
+                      }
+                      onChange={
+                        handleEmpresaChange
+                      }
                       required
                     />
                   </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">
+                  <div className="mb-4">
+                    <label className="form-label fw-bold">
                       NIT / RUT
                     </label>
 
@@ -1128,15 +1322,19 @@ function App() {
                       type="text"
                       name="nit_rut"
                       className="form-control"
-                      value={empresaData.nit_rut}
-                      onChange={handleEmpresaChange}
+                      value={
+                        empresaData.nit_rut
+                      }
+                      onChange={
+                        handleEmpresaChange
+                      }
                       required
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="btn btn-primary w-100"
+                    className="btn btn-primary w-100 fw-bold"
                   >
                     💾 Registrar Empresa
                   </button>
@@ -1147,12 +1345,15 @@ function App() {
         )}
 
         {/* ==================================================
-            CREAR VACANTE - EMPLEADO
+            CREAR VACANTE
         ================================================== */}
 
-        {vistaActual === 'vacante' && (
+        {vistaActual ===
+          'vacante' && (
           <section>
-            {!tieneRol(['empleado']) ? (
+            {!tieneRol([
+              'empleado',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div className="card shadow p-4">
@@ -1161,32 +1362,41 @@ function App() {
                 </h2>
 
                 <div className="alert alert-primary">
-                  <strong>Rol:</strong> Empleado
+                  <strong>
+                    Rol:
+                  </strong>{' '}
+                  Empleado
                   <br />
-                  Esta información será almacenada en la
-                  tabla <code>vacante</code>.
+                  <strong>
+                    Tabla:
+                  </strong>{' '}
+                  vacante
                 </div>
 
-                <form onSubmit={handleVacanteSubmit}>
-                  {/* TÍTULO */}
-
+                <form
+                  onSubmit={
+                    handleVacanteSubmit
+                  }
+                >
                   <div className="mb-3">
                     <label className="form-label fw-bold">
-                      Título de la vacante
+                      Título
                     </label>
 
                     <input
                       type="text"
                       name="titulo"
                       className="form-control"
-                      value={vacanteData.titulo}
-                      onChange={handleVacanteChange}
+                      value={
+                        vacanteData.titulo
+                      }
+                      onChange={
+                        handleVacanteChange
+                      }
                       placeholder="Ej. Desarrollador de Software"
                       required
                     />
                   </div>
-
-                  {/* SALARIO */}
 
                   <div className="mb-3">
                     <label className="form-label fw-bold">
@@ -1197,15 +1407,17 @@ function App() {
                       type="number"
                       name="salario"
                       className="form-control"
-                      value={vacanteData.salario}
-                      onChange={handleVacanteChange}
-                      placeholder="Ej. 3000000"
+                      value={
+                        vacanteData.salario
+                      }
+                      onChange={
+                        handleVacanteChange
+                      }
                       min="0"
+                      placeholder="Ej. 3000000"
                       required
                     />
                   </div>
-
-                  {/* EMPRESA */}
 
                   <div className="mb-3">
                     <label className="form-label fw-bold">
@@ -1216,14 +1428,16 @@ function App() {
                       type="text"
                       name="cod_empresa"
                       className="form-control"
-                      value={vacanteData.cod_empresa}
-                      onChange={handleVacanteChange}
-                      placeholder="Código de la empresa"
+                      value={
+                        vacanteData.cod_empresa
+                      }
+                      onChange={
+                        handleVacanteChange
+                      }
+                      placeholder="Código de empresa"
                       required
                     />
                   </div>
-
-                  {/* DESCRIPCIÓN */}
 
                   <div className="mb-4">
                     <label className="form-label fw-bold">
@@ -1234,9 +1448,13 @@ function App() {
                       name="descripcion"
                       className="form-control"
                       rows="6"
-                      value={vacanteData.descripcion}
-                      onChange={handleVacanteChange}
-                      placeholder="Describe las funciones, requisitos y condiciones de la vacante..."
+                      value={
+                        vacanteData.descripcion
+                      }
+                      onChange={
+                        handleVacanteChange
+                      }
+                      placeholder="Describe la vacante..."
                       required
                     />
                   </div>
@@ -1254,35 +1472,46 @@ function App() {
         )}
 
         {/* ==================================================
-            VER POSTULANTES - EMPLEADO
+            POSTULANTES
         ================================================== */}
 
-        {vistaActual === 'postulantes' && (
+        {vistaActual ===
+          'postulantes' && (
           <section>
-            {!tieneRol(['empleado']) ? (
+            {!tieneRol([
+              'empleado',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div>
                 <h2 className="mb-4">
-                  👥 Postulantes
+                  👥 Ver Postulantes
                 </h2>
 
                 <div className="alert alert-info">
-                  Aquí se consultarán los registros de{' '}
-                  <code>postulaciones</code> relacionados con
-                  <code>candidato</code>.
+                  Esta sección utilizará
+                  las tablas
+                  <code>
+                    postulaciones
+                  </code>{' '}
+                  y
+                  <code>
+                    candidato
+                  </code>
+                  .
                 </div>
 
                 <div className="card shadow-sm">
                   <div className="card-body">
                     <h5>
-                      Módulo de postulantes
+                      Gestión de postulantes
                     </h5>
 
                     <p>
-                      En la siguiente etapa se conectará este
-                      módulo con Supabase para consultar los
-                      candidatos.
+                      Aquí se mostrarán
+                      los candidatos
+                      asociados a las
+                      vacantes.
                     </p>
 
                     <button
@@ -1290,11 +1519,11 @@ function App() {
                       className="btn btn-primary"
                       onClick={() =>
                         alert(
-                          'Aquí posteriormente se actualizará estado_proceso.'
+                          'Aquí se actualizará estado_proceso.'
                         )
                       }
                     >
-                      Actualizar estado del proceso
+                      Actualizar estado
                     </button>
                   </div>
                 </div>
@@ -1304,12 +1533,15 @@ function App() {
         )}
 
         {/* ==================================================
-            GESTIÓN DE USUARIOS - ADMINISTRADOR
+            GESTIÓN DE USUARIOS
         ================================================== */}
 
-        {vistaActual === 'usuarios' && (
+        {vistaActual ===
+          'usuarios' && (
           <section>
-            {!tieneRol(['administrador']) ? (
+            {!tieneRol([
+              'administrador',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <div>
@@ -1318,9 +1550,15 @@ function App() {
                 </h2>
 
                 <div className="alert alert-warning">
-                  <strong>Administrador:</strong> esta sección
-                  estará conectada a la tabla{' '}
-                  <code>usuarios_roles</code>.
+                  <strong>
+                    Administrador:
+                  </strong>{' '}
+                  esta sección utiliza
+                  la tabla
+                  <code>
+                    usuarios_roles
+                  </code>
+                  .
                 </div>
 
                 <div className="card shadow-sm">
@@ -1330,35 +1568,49 @@ function App() {
                     </h5>
 
                     <p>
-                      Aquí el administrador podrá consultar y
-                      modificar los roles de los usuarios.
+                      El administrador
+                      podrá consultar y
+                      modificar los roles
+                      de los usuarios.
                     </p>
 
                     <div className="table-responsive">
                       <table className="table table-bordered table-hover">
                         <thead className="table-dark">
                           <tr>
-                            <th>Usuario</th>
-                            <th>Rol</th>
-                            <th>Acción</th>
+                            <th>
+                              Usuario
+                            </th>
+
+                            <th>
+                              Rol
+                            </th>
+
+                            <th>
+                              Acción
+                            </th>
                           </tr>
                         </thead>
 
                         <tbody>
                           <tr>
-                            <td>Usuario autenticado</td>
+                            <td>
+                              {usuario.email}
+                            </td>
+
                             <td>
                               <span className="badge bg-primary">
                                 {rolUsuario}
                               </span>
                             </td>
+
                             <td>
                               <button
                                 type="button"
                                 className="btn btn-sm btn-warning"
                                 onClick={() =>
                                   alert(
-                                    'Esta acción se conectará con usuarios_roles.'
+                                    'La edición de roles se conectará con usuarios_roles.'
                                   )
                                 }
                               >
@@ -1380,9 +1632,12 @@ function App() {
             REPORTES
         ================================================== */}
 
-        {vistaActual === 'reportes' && (
+        {vistaActual ===
+          'reportes' && (
           <section>
-            {!tieneRol(['administrador']) ? (
+            {!tieneRol([
+              'administrador',
+            ]) ? (
               <AccesoDenegado />
             ) : (
               <UnderConstruction
@@ -1398,7 +1653,7 @@ function App() {
 }
 
 // ======================================================
-// COMPONENTE DE ACCESO DENEGADO
+// COMPONENTE ACCESO DENEGADO
 // ======================================================
 
 function AccesoDenegado() {
@@ -1412,21 +1667,19 @@ function AccesoDenegado() {
       </h4>
 
       <p>
-        No tienes permisos para acceder a esta sección.
+        No tienes permisos para acceder
+        a esta sección.
       </p>
 
       <hr />
 
       <p className="mb-0">
-        Verifica que tu usuario tenga el rol correspondiente.
+        Verifica que tu usuario tenga
+        el rol correspondiente.
       </p>
     </div>
   )
 }
-
-// ======================================================
-// EXPORTACIÓN
-// ======================================================
 
 export default App
 ```
