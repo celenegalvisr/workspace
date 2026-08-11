@@ -488,7 +488,7 @@ function App() {
                   </div>
 
                   <button type="submit" className="btn btn-primary w-100 fw-bold">
-                    🚀 Guardar postulado
+                    🚀 Guardar postulacion
                   </button>
                 </form>
               </div>
