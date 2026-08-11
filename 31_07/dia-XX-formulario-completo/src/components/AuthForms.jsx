@@ -8,7 +8,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Validamos las variables de entorno antes de crear el cliente
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
     '❌ No se encontraron las variables de Supabase en el archivo .env'
@@ -34,10 +33,11 @@ function AuthForms({ onLoginSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  // Por seguridad, todos los registros nuevos serán
+  // contratistas.
   const [rol, setRol] = useState('contratista')
 
   const [cargando, setCargando] = useState(false)
-
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
 
@@ -71,49 +71,34 @@ function AuthForms({ onLoginSuccess }) {
   // ====================================================
 
   const obtenerRolUsuario = async (usuarioAuth) => {
-    if (!usuarioAuth) {
+    if (!usuarioAuth?.id) {
       return null
     }
 
-    // -----------------------------------------------
-    // PRIMER INTENTO:
-    // Buscar por UUID de Supabase Auth
-    // -----------------------------------------------
+    // --------------------------------------------------
+    // Buscar por usuario_id
+    // --------------------------------------------------
 
-    const { data: datosPorId, error: errorPorId } =
-      await supabase
-        .from('usuarios_roles')
-        .select('usuario, rol')
-        .eq('usuario', usuarioAuth.id)
-        .maybeSingle()
+    const { data, error: errorConsulta } = await supabase
+      .from('usuarios_roles')
+      .select('usuario_id, rol')
+      .eq('usuario_id', usuarioAuth.id)
+      .maybeSingle()
 
-    if (!errorPorId && datosPorId?.rol) {
-      return datosPorId.rol
+    if (!errorConsulta && data?.rol) {
+      return data.rol
     }
 
-    // -----------------------------------------------
-    // SEGUNDO INTENTO:
-    // Buscar por correo
-    //
-    // Esto permite que funcione si la columna
-    // "usuario" guarda el correo electrónico.
-    // -----------------------------------------------
-
-    const { data: datosPorCorreo, error: errorPorCorreo } =
-      await supabase
-        .from('usuarios_roles')
-        .select('usuario, rol')
-        .eq('usuario', usuarioAuth.email)
-        .maybeSingle()
-
-    if (!errorPorCorreo && datosPorCorreo?.rol) {
-      return datosPorCorreo.rol
+    if (errorConsulta) {
+      console.error(
+        '❌ Error consultando el rol:',
+        errorConsulta.message
+      )
     }
 
-    // -----------------------------------------------
-    // TERCER INTENTO:
-    // Buscar el rol en user_metadata
-    // -----------------------------------------------
+    // --------------------------------------------------
+    // Segundo intento: user_metadata
+    // --------------------------------------------------
 
     const rolMetadata = usuarioAuth.user_metadata?.rol
 
@@ -125,49 +110,47 @@ function AuthForms({ onLoginSuccess }) {
   }
 
   // ====================================================
-  // GUARDAR ROL EN usuarios_roles
+  // GUARDAR ROL DEL USUARIO
   // ====================================================
 
   const guardarRolUsuario = async (usuarioAuth, rolSeleccionado) => {
-    if (!usuarioAuth || !rolSeleccionado) {
+    if (!usuarioAuth?.id || !rolSeleccionado) {
       return false
     }
 
-    // Primero intentamos guardar usando el UUID
-    const { error: errorUUID } = await supabase
+    // IMPORTANTE:
+    // La tabla utiliza "usuario_id", NO "usuario".
+
+    const { error: insertError } = await supabase
       .from('usuarios_roles')
       .insert({
-        usuario: usuarioAuth.id,
+        usuario_id: usuarioAuth.id,
         rol: rolSeleccionado,
       })
 
-    if (!errorUUID) {
-      return true
-    }
-
-    console.warn(
-      '⚠️ No fue posible guardar el rol usando el UUID:',
-      errorUUID.message
-    )
-
-    // -----------------------------------------------
-    // Segundo intento usando correo
-    // -----------------------------------------------
-
-    const { error: errorCorreo } = await supabase
-      .from('usuarios_roles')
-      .insert({
-        usuario: usuarioAuth.email,
-        rol: rolSeleccionado,
-      })
-
-    if (!errorCorreo) {
+    if (!insertError) {
+      console.log('✅ Rol guardado correctamente.')
       return true
     }
 
     console.error(
-      '❌ No fue posible guardar el rol:',
-      errorCorreo.message
+      '❌ Error guardando el rol:',
+      insertError.message
+    )
+
+    console.error(
+      'Código Supabase:',
+      insertError.code
+    )
+
+    console.error(
+      'Detalles Supabase:',
+      insertError.details
+    )
+
+    console.error(
+      'Hint Supabase:',
+      insertError.hint
     )
 
     return false
@@ -208,9 +191,9 @@ function AuthForms({ onLoginSuccess }) {
         )
       }
 
-      // -----------------------------------------------
-      // Obtener rol desde usuarios_roles
-      // -----------------------------------------------
+      // ------------------------------------------------
+      // Obtener rol
+      // ------------------------------------------------
 
       const rolUsuario = await obtenerRolUsuario(data.user)
 
@@ -222,12 +205,13 @@ function AuthForms({ onLoginSuccess }) {
         )
       }
 
-      // -----------------------------------------------
+      // ------------------------------------------------
       // Normalizar rol
-      // -----------------------------------------------
+      // ------------------------------------------------
 
-      const rolNormalizado =
-        String(rolUsuario).toLowerCase().trim()
+      const rolNormalizado = String(rolUsuario)
+        .toLowerCase()
+        .trim()
 
       const rolesValidos = [
         'administrador',
@@ -239,13 +223,13 @@ function AuthForms({ onLoginSuccess }) {
         await supabase.auth.signOut()
 
         throw new Error(
-          'El rol registrado no es válido. Debe ser administrador, empleado o contratista.'
+          'El rol registrado no es válido.'
         )
       }
 
-      // -----------------------------------------------
-      // Crear objeto que recibe App.jsx
-      // -----------------------------------------------
+      // ------------------------------------------------
+      // Usuario completo para App.jsx
+      // ------------------------------------------------
 
       const usuarioCompleto = {
         ...data.user,
@@ -255,10 +239,6 @@ function AuthForms({ onLoginSuccess }) {
       setMensaje(
         '✅ Inicio de sesión exitoso.'
       )
-
-      // -----------------------------------------------
-      // Avisamos a App.jsx
-      // -----------------------------------------------
 
       if (typeof onLoginSuccess === 'function') {
         onLoginSuccess(usuarioCompleto)
@@ -301,19 +281,18 @@ function AuthForms({ onLoginSuccess }) {
       return
     }
 
-    if (!rol) {
-      setError(
-        'Selecciona un rol.'
-      )
-      return
-    }
-
     try {
       setCargando(true)
 
-      // -----------------------------------------------
+      // ------------------------------------------------
+      // El registro público siempre será CONTRATISTA.
+      // ------------------------------------------------
+
+      const rolRegistro = 'contratista'
+
+      // ------------------------------------------------
       // Crear usuario en Supabase Auth
-      // -----------------------------------------------
+      // ------------------------------------------------
 
       const { data, error: registroError } =
         await supabase.auth.signUp({
@@ -321,7 +300,7 @@ function AuthForms({ onLoginSuccess }) {
           password,
           options: {
             data: {
-              rol,
+              rol: rolRegistro,
             },
           },
         })
@@ -336,26 +315,44 @@ function AuthForms({ onLoginSuccess }) {
         )
       }
 
-      // -----------------------------------------------
-      // Guardar el rol
-      // -----------------------------------------------
-
-      const rolGuardado = await guardarRolUsuario(
-        data.user,
-        rol
+      console.log(
+        '✅ Usuario creado:',
+        data.user.id
       )
 
-      if (!rolGuardado) {
-        setError(
-          'El usuario fue creado, pero no se pudo guardar el rol en usuarios_roles. Revisa las políticas RLS.'
+      console.log(
+        '🔐 ¿Existe sesión?:',
+        data.session ? 'SÍ' : 'NO'
+      )
+
+      // ------------------------------------------------
+      // IMPORTANTE
+      //
+      // Si hay confirmación por correo, data.session
+      // puede ser null.
+      //
+      // En ese caso NO intentamos insertar desde el
+      // navegador porque auth.uid() será null.
+      // ------------------------------------------------
+
+      if (data.session) {
+        const rolGuardado = await guardarRolUsuario(
+          data.user,
+          rolRegistro
         )
 
-        return
+        if (!rolGuardado) {
+          setError(
+            'El usuario fue creado, pero no se pudo guardar el rol. Revisa las políticas RLS o el trigger de usuarios_roles.'
+          )
+
+          return
+        }
       }
 
-      // -----------------------------------------------
-      // Caso en que Supabase requiere confirmación
-      // -----------------------------------------------
+      // ------------------------------------------------
+      // Confirmación por correo
+      // ------------------------------------------------
 
       if (!data.session) {
         setMensaje(
@@ -368,13 +365,13 @@ function AuthForms({ onLoginSuccess }) {
         return
       }
 
-      // -----------------------------------------------
-      // Si la sesión se creó inmediatamente
-      // -----------------------------------------------
+      // ------------------------------------------------
+      // Sesión creada inmediatamente
+      // ------------------------------------------------
 
       const usuarioCompleto = {
         ...data.user,
-        rol,
+        rol: rolRegistro,
       }
 
       setMensaje(
@@ -449,11 +446,13 @@ function AuthForms({ onLoginSuccess }) {
 
   return (
     <div>
-      {/* ==================================================
+
+      {/* ================================================
           BOTONES LOGIN / REGISTRO
-      ================================================== */}
+      ================================================= */}
 
       <div className="btn-group w-100 mb-4">
+
         <button
           type="button"
           className={
@@ -479,11 +478,12 @@ function AuthForms({ onLoginSuccess }) {
         >
           📝 Registrarse
         </button>
+
       </div>
 
-      {/* ==================================================
+      {/* ================================================
           MENSAJE DE ÉXITO
-      ================================================== */}
+      ================================================= */}
 
       {mensaje && (
         <div
@@ -494,9 +494,9 @@ function AuthForms({ onLoginSuccess }) {
         </div>
       )}
 
-      {/* ==================================================
+      {/* ================================================
           MENSAJE DE ERROR
-      ================================================== */}
+      ================================================= */}
 
       {error && (
         <div
@@ -507,13 +507,15 @@ function AuthForms({ onLoginSuccess }) {
         </div>
       )}
 
-      {/* ==================================================
-          FORMULARIO DE LOGIN
-      ================================================== */}
+      {/* ================================================
+          LOGIN
+      ================================================= */}
 
       {modo === 'login' && (
         <form onSubmit={handleLogin}>
+
           <div className="mb-3">
+
             <label
               htmlFor="login-email"
               className="form-label fw-bold"
@@ -534,9 +536,11 @@ function AuthForms({ onLoginSuccess }) {
               required
               disabled={cargando}
             />
+
           </div>
 
           <div className="mb-3">
+
             <label
               htmlFor="login-password"
               className="form-label fw-bold"
@@ -557,6 +561,7 @@ function AuthForms({ onLoginSuccess }) {
               required
               disabled={cargando}
             />
+
           </div>
 
           <button
@@ -577,16 +582,19 @@ function AuthForms({ onLoginSuccess }) {
           >
             ¿Olvidaste tu contraseña?
           </button>
+
         </form>
       )}
 
-      {/* ==================================================
-          FORMULARIO DE REGISTRO
-      ================================================== */}
+      {/* ================================================
+          REGISTRO
+      ================================================= */}
 
       {modo === 'registro' && (
         <form onSubmit={handleRegistro}>
+
           <div className="mb-3">
+
             <label
               htmlFor="registro-email"
               className="form-label fw-bold"
@@ -607,9 +615,11 @@ function AuthForms({ onLoginSuccess }) {
               required
               disabled={cargando}
             />
+
           </div>
 
           <div className="mb-3">
+
             <label
               htmlFor="registro-password"
               className="form-label fw-bold"
@@ -635,9 +645,21 @@ function AuthForms({ onLoginSuccess }) {
             <div className="form-text">
               La contraseña debe tener mínimo 6 caracteres.
             </div>
+
           </div>
 
+          {/* ============================================
+              ROL
+              
+              Por seguridad, el registro público crea
+              usuarios como CONTRATISTA.
+              
+              Los roles administrativos deben asignarse
+              desde una operación controlada.
+          ============================================ */}
+
           <div className="mb-4">
+
             <label
               htmlFor="registro-rol"
               className="form-label fw-bold"
@@ -652,26 +674,17 @@ function AuthForms({ onLoginSuccess }) {
               onChange={(e) =>
                 setRol(e.target.value)
               }
-              required
-              disabled={cargando}
+              disabled
             >
               <option value="contratista">
                 👤 Contratista
               </option>
-
-              <option value="empleado">
-                👷 Empleado
-              </option>
-
-              <option value="administrador">
-                🛡️ Administrador
-              </option>
             </select>
 
             <div className="form-text">
-              El rol determina las opciones disponibles
-              dentro de EmpleoLink.
+              Los nuevos registros se crean como contratistas.
             </div>
+
           </div>
 
           <button
@@ -683,8 +696,10 @@ function AuthForms({ onLoginSuccess }) {
               ? '⏳ Registrando...'
               : '📝 Crear Cuenta'}
           </button>
+
         </form>
       )}
+
     </div>
   )
 }
