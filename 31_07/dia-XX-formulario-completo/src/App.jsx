@@ -1,83 +1,267 @@
+```jsx
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import AuthForm from './components/AuthForms' // Ajusta el path si es necesario
-import { UnderConstruction } from './components/UnderConstruction' // Importación del componente
+import AuthForm from './components/AuthForms'
+import { UnderConstruction } from './components/UnderConstruction'
 import './App.css'
 
+// ======================================================
+// APP PRINCIPAL - EMPLEOLINK
+// ======================================================
+
 function App() {
-  // ================= ESTADOS GENERALES =================
-  const [count, setCount] = useState(0)
+  // ======================================================
+  // ESTADOS GENERALES
+  // ======================================================
+
   const [usuario, setUsuario] = useState(null)
-  
-  // Estado para controlar la sección o vista actual ('inicio' | 'formulario' | 'reportes')
+
+  // Vista actual del sistema
   const [vistaActual, setVistaActual] = useState('inicio')
 
-  // Estado local para los campos del formulario de estudiante
-  const [formData, setFormData] = useState({
-    nombre: '',
-    correo: '',
-    password: '',
-    edad: '',
-    fechaNacimiento: '',
-    experiencia: '5',
-    vacante: '',
-    lenguajes: [],
-    modalidad: 'presencial',
-    pais: '',
-    color: '#646cff',
-    archivo: null,
-    terminos: false
+  // ======================================================
+  // DATOS DEL FORMULARIO DE VACANTE
+  // Estos campos corresponden a la tabla "vacante"
+  // ======================================================
+
+  const [vacanteData, setVacanteData] = useState({
+    titulo: '',
+    salario: '',
+    descripcion: '',
+    cod_empresa: '',
   })
 
-  // ================= MANEJADORES DE SESIÓN =================
+  // ======================================================
+  // DATOS DEL FORMULARIO DE EMPRESA
+  // Corresponden a la tabla "empresa"
+  // ======================================================
+
+  const [empresaData, setEmpresaData] = useState({
+    cod_empresa: '',
+    nombre_empresa: '',
+    nit_rut: '',
+  })
+
+  // ======================================================
+  // DATOS DEL PERFIL DEL CONTRATISTA
+  // Corresponden a la tabla "candidato"
+  // ======================================================
+
+  const [candidatoData, setCandidatoData] = useState({
+    num_documento: '',
+    nombre: '',
+    apellido: '',
+    telefono: '',
+    perfil: '',
+    correo: '',
+  })
+
+  // ======================================================
+  // MANEJO DEL LOGIN
+  // ======================================================
+
   const handleLoginSuccess = (user) => {
     setUsuario(user)
-    setVistaActual('formulario') // Redirige automáticamente al formulario tras login
+
+    /*
+      Después del login vamos inicialmente a Inicio.
+
+      El rol puede venir de diferentes lugares dependiendo
+      de cómo esté construido AuthForms.
+
+      Ejemplo esperado:
+
+      user = {
+        id: '...',
+        email: '...',
+        rol: 'administrador'
+      }
+
+      Si AuthForms todavía no agrega el rol,
+      el sistema permanecerá en Inicio.
+    */
+
+    setVistaActual('inicio')
   }
+
+  // ======================================================
+  // CERRAR SESIÓN
+  // ======================================================
 
   const handleLogout = () => {
     setUsuario(null)
-    setVistaActual('inicio') // Regresa a inicio al cerrar sesión
+    setVistaActual('inicio')
+
+    // Limpiamos los formularios
+    setVacanteData({
+      titulo: '',
+      salario: '',
+      descripcion: '',
+      cod_empresa: '',
+    })
+
+    setEmpresaData({
+      cod_empresa: '',
+      nombre_empresa: '',
+      nit_rut: '',
+    })
+
+    setCandidatoData({
+      num_documento: '',
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      perfil: '',
+      correo: '',
+    })
   }
 
-  // ================= MANEJADORES DEL FORMULARIO =================
-  const handleInputChange = (e) => {
-    const { name, value, type, checked, files } = e.target
+  // ======================================================
+  // OBTENER ROL DEL USUARIO
+  // ======================================================
 
-    if (type === 'checkbox' && name === 'lenguajes') {
-      // Manejo para grupo de checkboxes (lenguajes)
-      const nuevosLenguajes = checked
-        ? [...formData.lenguajes, value]
-        : formData.lenguajes.filter((l) => l !== value)
-
-      setFormData((prev) => ({ ...prev, lenguajes: nuevosLenguajes }))
-    } else if (type === 'checkbox') {
-      // Manejo para checkbox único (términos)
-      setFormData((prev) => ({ ...prev, [name]: checked }))
-    } else if (type === 'file') {
-      // Manejo para archivo
-      setFormData((prev) => ({ ...prev, [name]: files[0] }))
-    } else {
-      // Manejo para inputs estándar
-      setFormData((prev) => ({ ...prev, [name]: value }))
+  const obtenerRol = () => {
+    if (!usuario) {
+      return null
     }
+
+    /*
+      Se contemplan varias posibilidades para que sea
+      compatible con diferentes versiones de AuthForms.
+
+      Prioridad:
+      1. usuario.rol
+      2. usuario.user_metadata.rol
+      3. usuario.role
+    */
+
+    return (
+      usuario.rol ||
+      usuario.user_metadata?.rol ||
+      usuario.role ||
+      null
+    )
   }
 
-  const handleSubmit = (e) => {
+  const rolUsuario = obtenerRol()
+
+  // ======================================================
+  // VERIFICAR SI EL USUARIO TIENE UN ROL
+  // ======================================================
+
+  const tieneRol = (rolesPermitidos) => {
+    if (!usuario) {
+      return false
+    }
+
+    if (!rolUsuario) {
+      return false
+    }
+
+    return rolesPermitidos.includes(rolUsuario)
+  }
+
+  // ======================================================
+  // MANEJO DEL FORMULARIO DE VACANTE
+  // ======================================================
+
+  const handleVacanteChange = (e) => {
+    const { name, value } = e.target
+
+    setVacanteData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleVacanteSubmit = (e) => {
     e.preventDefault()
-    if (!formData.terminos) {
-      alert('Debes aceptar los términos y condiciones.')
+
+    console.log('Datos de la vacante:', vacanteData)
+
+    alert(
+      'Vacante preparada correctamente. Falta conectar este formulario con Supabase.'
+    )
+  }
+
+  // ======================================================
+  // MANEJO DEL FORMULARIO DE EMPRESA
+  // ======================================================
+
+  const handleEmpresaChange = (e) => {
+    const { name, value } = e.target
+
+    setEmpresaData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleEmpresaSubmit = (e) => {
+    e.preventDefault()
+
+    console.log('Datos de la empresa:', empresaData)
+
+    alert(
+      'Empresa preparada correctamente. Falta conectar este formulario con Supabase.'
+    )
+  }
+
+  // ======================================================
+  // MANEJO DEL PERFIL DEL CONTRATISTA
+  // ======================================================
+
+  const handleCandidatoChange = (e) => {
+    const { name, value } = e.target
+
+    setCandidatoData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleCandidatoSubmit = (e) => {
+    e.preventDefault()
+
+    console.log('Datos del contratista:', candidatoData)
+
+    alert(
+      'Perfil preparado correctamente. Falta conectar este formulario con Supabase.'
+    )
+  }
+
+  // ======================================================
+  // FUNCIÓN PARA NAVEGAR A UNA VISTA PROTEGIDA
+  // ======================================================
+
+  const navegarConRol = (vista, rolesPermitidos) => {
+    if (!usuario) {
+      alert('Debes iniciar sesión para acceder a esta sección.')
+      setVistaActual('inicio')
       return
     }
-    console.log('Datos enviados:', formData)
-    alert('¡Formulario enviado con éxito!')
+
+    if (!tieneRol(rolesPermitidos)) {
+      alert(
+        `No tienes permisos para acceder a esta sección. Rol actual: ${
+          rolUsuario || 'no definido'
+        }`
+      )
+      return
+    }
+
+    setVistaActual(vista)
   }
+
+  // ======================================================
+  // RENDER
+  // ======================================================
 
   return (
     <>
-      {/* ================= MENÚ FLOTANTE INTEGRADO ================= */}
+      {/* ==================================================
+          MENÚ FLOTANTE
+      ================================================== */}
+
       <aside
         style={{
           position: 'fixed',
@@ -91,62 +275,275 @@ function App() {
           border: '1px solid #495057',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
-          width: '210px',
-          textAlign: 'left'
+          gap: '10px',
+          width: '220px',
+          textAlign: 'left',
         }}
       >
-        <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
-          🧭 Menú Navegación
+        <span
+          style={{
+            fontSize: '11px',
+            color: '#adb5bd',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+          }}
+        >
+          🧭 Menú de Acceso
         </span>
 
-        {/* Botón Inicio - Siempre visible */}
+        {/* ================= INICIO ================= */}
+
         <button
+          type="button"
           onClick={() => setVistaActual('inicio')}
           className="btn btn-sm text-start w-100 fw-bold"
           style={{
-            backgroundColor: vistaActual === 'inicio' ? '#0dcaf0' : 'transparent',
+            backgroundColor:
+              vistaActual === 'inicio' ? '#0dcaf0' : 'transparent',
             color: vistaActual === 'inicio' ? '#000' : '#fff',
-            border: 'none'
+            border: 'none',
           }}
         >
-          🏠 Ir a Inicio
+          🏠 Inicio
         </button>
 
-        {/* Opciones Condicionales del Menú Flotante */}
+        {/* ==================================================
+            OPCIONES PARA USUARIOS AUTENTICADOS
+        ================================================== */}
+
         {usuario ? (
-          <div style={{ borderTop: '1px solid #495057', paddingTop: '10px' }}>
-            <p style={{ fontSize: '12px', color: '#198754', margin: '0 0 8px 0', wordBreak: 'break-all' }}>
-              🟢 En línea: <br />
-              <strong>{usuario.email}</strong>
-            </p>
+          <div
+            style={{
+              borderTop: '1px solid #495057',
+              paddingTop: '10px',
+            }}
+          >
+            {/* Información del usuario */}
 
-            <button
-              onClick={() => setVistaActual('formulario')}
-              className="btn btn-sm text-start w-100 fw-bold mb-2"
+            <div
               style={{
-                backgroundColor: vistaActual === 'formulario' ? '#0dcaf0' : 'transparent',
-                color: vistaActual === 'formulario' ? '#000' : '#fff',
-                border: 'none'
+                fontSize: '12px',
+                color: '#198754',
+                marginBottom: '10px',
+                wordBreak: 'break-word',
               }}
             >
-              📝 Formulario Vacante
-            </button>
+              🟢 Sesión activa
+              <br />
 
-            {/* Botón añadido para ir a Reportes */}
-            <button
-              onClick={() => setVistaActual('reportes')}
-              className="btn btn-sm text-start w-100 fw-bold mb-2"
-              style={{
-                backgroundColor: vistaActual === 'reportes' ? '#0dcaf0' : 'transparent',
-                color: vistaActual === 'reportes' ? '#000' : '#fff',
-                border: 'none'
-              }}
-            >
-              📊 Módulo Reportes
-            </button>
+              <strong>
+                {usuario.email || 'Usuario autenticado'}
+              </strong>
+
+              <br />
+
+              <span
+                style={{
+                  color: '#ffc107',
+                  textTransform: 'capitalize',
+                }}
+              >
+                Rol: {rolUsuario || 'No definido'}
+              </span>
+            </div>
+
+            {/* ==================================================
+                MENÚ DEL CONTRATISTA
+            ================================================== */}
+
+            {tieneRol(['contratista']) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('perfilContratista', ['contratista'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'perfilContratista'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'perfilContratista'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  👤 Mi Perfil
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('vacantes', ['contratista'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'vacantes'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'vacantes'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  🔎 Ver Vacantes
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('postulaciones', ['contratista'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'postulaciones'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'postulaciones'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  📄 Mis Postulaciones
+                </button>
+              </>
+            )}
+
+            {/* ==================================================
+                MENÚ DEL EMPLEADO
+            ================================================== */}
+
+            {tieneRol(['empleado']) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('empresa', ['empleado'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'empresa'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'empresa'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  🏢 Registrar Empresa
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('vacante', ['empleado'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'vacante'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'vacante'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  📝 Crear Vacante
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('postulantes', ['empleado'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'postulantes'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'postulantes'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  👥 Ver Postulantes
+                </button>
+              </>
+            )}
+
+            {/* ==================================================
+                MENÚ DEL ADMINISTRADOR
+            ================================================== */}
+
+            {tieneRol(['administrador']) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('usuarios', ['administrador'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'usuarios'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'usuarios'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  🛡️ Gestión de Usuarios
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('reportes', ['administrador'])
+                  }
+                  className="btn btn-sm text-start w-100 fw-bold mb-2"
+                  style={{
+                    backgroundColor:
+                      vistaActual === 'reportes'
+                        ? '#0dcaf0'
+                        : 'transparent',
+                    color:
+                      vistaActual === 'reportes'
+                        ? '#000'
+                        : '#fff',
+                    border: 'none',
+                  }}
+                >
+                  📊 Reportes
+                </button>
+              </>
+            )}
+
+            {/* ================= CERRAR SESIÓN ================= */}
 
             <button
+              type="button"
               onClick={handleLogout}
               className="btn btn-danger btn-sm w-100 fw-bold mt-2"
             >
@@ -154,41 +551,74 @@ function App() {
             </button>
           </div>
         ) : (
-          <div style={{ borderTop: '1px solid #495057', paddingTop: '10px', textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: '#dc3545', margin: 0 }}>
+          <div
+            style={{
+              borderTop: '1px solid #495057',
+              paddingTop: '10px',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#dc3545',
+                margin: 0,
+              }}
+            >
               🔒 Inicia sesión para desbloquear las opciones.
             </p>
           </div>
         )}
       </aside>
 
-      {/* ================= BARRA DE NAVEGACIÓN SUPERIOR ================= */}
+      {/* ==================================================
+          BARRA SUPERIOR
+      ================================================== */}
+
       <nav
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '15px 30px',
+          paddingLeft: '260px',
           backgroundColor: '#1a1a1a',
           borderBottom: '1px solid #333',
           position: 'sticky',
           top: 0,
-          zIndex: 1000
+          zIndex: 1000,
         }}
       >
-        <div style={{ fontWeight: 'bold', color: '#646cff', fontSize: '1.2rem' }}>
+        <div
+          style={{
+            fontWeight: 'bold',
+            color: '#646cff',
+            fontSize: '1.2rem',
+          }}
+        >
           🎓 EmpleoLink
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '15px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <button
+            type="button"
             onClick={() => setVistaActual('inicio')}
             style={{
               background: 'none',
               border: 'none',
-              color: vistaActual === 'inicio' ? '#646cff' : '#aaa',
+              color:
+                vistaActual === 'inicio'
+                  ? '#646cff'
+                  : '#aaa',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
             }}
           >
             Inicio
@@ -196,37 +626,80 @@ function App() {
 
           {usuario && (
             <>
-              <button
-                onClick={() => setVistaActual('formulario')}
+              {tieneRol(['contratista']) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('vacantes', ['contratista'])
+                  }
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color:
+                      vistaActual === 'vacantes'
+                        ? '#646cff'
+                        : '#aaa',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Vacantes
+                </button>
+              )}
+
+              {tieneRol(['empleado']) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('vacante', ['empleado'])
+                  }
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color:
+                      vistaActual === 'vacante'
+                        ? '#646cff'
+                        : '#aaa',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Nueva Vacante
+                </button>
+              )}
+
+              {tieneRol(['administrador']) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navegarConRol('usuarios', ['administrador'])
+                  }
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color:
+                      vistaActual === 'usuarios'
+                        ? '#646cff'
+                        : '#aaa',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Usuarios
+                </button>
+              )}
+
+              <span
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: vistaActual === 'formulario' ? '#646cff' : '#aaa',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
+                  fontSize: '13px',
+                  color: '#28a745',
                 }}
               >
-                Registro nueva vacante
-              </button>
-
-              <button
-                onClick={() => setVistaActual('reportes')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: vistaActual === 'reportes' ? '#646cff' : '#aaa',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                Reportes
-              </button>
-
-              <span style={{ fontSize: '14px', color: '#28a745' }}>
                 👤 {usuario.email}
               </span>
 
               <button
+                type="button"
                 onClick={handleLogout}
                 className="btn btn-outline-danger btn-sm"
               >
@@ -237,258 +710,208 @@ function App() {
         </div>
       </nav>
 
-      {/* ================= CONTENIDO PRINCIPAL ================= */}
-      <main className="container my-4" style={{ maxWidth: '800px' }}>
-        
-        {/* VISTA 1: INICIO */}
+      {/* ==================================================
+          CONTENIDO PRINCIPAL
+      ================================================== */}
+
+      <main
+        className="container my-4"
+        style={{
+          maxWidth: '900px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        {/* ==================================================
+            VISTA INICIO
+        ================================================== */}
+
         {vistaActual === 'inicio' && (
           <section className="text-center">
-            <div className="hero mb-3">
-              <img src={heroImg} className="base me-2" width="120" alt="Hero" />
-              <img src={reactLogo} className="framework me-2" width="80" alt="React logo" />
-              <img src={viteLogo} className="vite" width="80" alt="Vite logo" />
+            <div className="py-5">
+              <div
+                style={{
+                  fontSize: '5rem',
+                  marginBottom: '20px',
+                }}
+              >
+                🎓
+              </div>
+
+              <h1 className="mb-3">
+                EmpleoLink
+              </h1>
+
+              <p className="lead text-secondary">
+                Conectando personas, empresas y oportunidades laborales.
+              </p>
+
+              <div
+                className="card shadow-sm mx-auto mt-4"
+                style={{
+                  maxWidth: '500px',
+                }}
+              >
+                <div className="card-body p-4">
+                  {!usuario ? (
+                    <>
+                      <h4 className="mb-3">
+                        🔐 Iniciar Sesión
+                      </h4>
+
+                      <p className="text-secondary">
+                        Ingresa al sistema para acceder a las funciones
+                        correspondientes a tu rol.
+                      </p>
+
+                      <AuthForm
+                        onLoginSuccess={handleLoginSuccess}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="text-success">
+                        🎉 Sesión activa
+                      </h4>
+
+                      <p className="mt-3">
+                        Bienvenido:
+                      </p>
+
+                      <strong>
+                        {usuario.email}
+                      </strong>
+
+                      <p className="mt-2">
+                        Rol:{' '}
+                        <span className="badge bg-primary">
+                          {rolUsuario || 'No definido'}
+                        </span>
+                      </p>
+
+                      <p className="text-secondary mt-3">
+                        Utiliza el menú lateral para acceder a las
+                        funcionalidades disponibles.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-
-            <h1 className="mb-3">EmpleoLink</h1>
-            <p className="text-secondary">Conectando tu futuro digital.</p>
-
-            {!usuario ? (
-              <div className="card p-4 mx-auto my-4 text-start shadow-sm" style={{ maxWidth: '450px' }}>
-                <h4 className="card-title text-center mb-3">Iniciar Sesión / Registro</h4>
-                <AuthForm onLoginSuccess={handleLoginSuccess} />
-              </div>
-            ) : (
-              <div className="alert alert-info mt-4" role="alert">
-                🎉 ¡Ya tienes una sesión activa como <strong>{usuario.email}</strong>! Usa el menú lateral o superior para acceder al formulario.
-              </div>
-            )}
           </section>
         )}
 
-        {/* VISTA 2: FORMULARIO DE ESTUDIANTE (PROTEGIDO) */}
-        {vistaActual === 'formulario' && (
+        {/* ==================================================
+            VISTA PERFIL CONTRATISTA
+        ================================================== */}
+
+        {vistaActual === 'perfilContratista' && (
           <section>
-            {!usuario ? (
-              /* Protección: si se intenta entrar sin estar logueado */
-              <div className="alert alert-danger text-center" role="alert">
-                <h4 className="alert-heading">Acceso Restringido</h4>
-                <p>Debes iniciar sesión previamente para acceder al registro de vacantes.</p>
-                <hr />
-                <button 
-                  onClick={() => setVistaActual('inicio')} 
-                  className="btn btn-danger btn-sm"
-                >
-                  Ir al Login
-                </button>
-              </div>
+            {!tieneRol(['contratista']) ? (
+              <AccesoDenegado />
             ) : (
-              /* Formulario protegido con clases Bootstrap */
-              <div className="card shadow p-4 text-start">
-                <h2 className="card-title mb-4 border-bottom pb-2">📋 Registro de vacante</h2>
-                
-                <form onSubmit={handleSubmit}>
-                  {/* Nombre */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Nombre Completo:</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="nombre"
-                      value={formData.nombre}
-                      onChange={handleInputChange}
-                      placeholder="Ej. Maria Pérez"
-                      required
-                    />
-                  </div>
+              <div className="card shadow p-4">
+                <h2 className="mb-4">
+                  👤 Perfil del Contratista
+                </h2>
 
-                  {/* Correo */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Correo Electrónico:</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="correo"
-                      value={formData.correo}
-                      onChange={handleInputChange}
-                      placeholder="correo@ejemplo.com"
-                      required
-                    />
-                  </div>
+                <form onSubmit={handleCandidatoSubmit}>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Número de documento
+                      </label>
 
-                  {/* Contraseña */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Contraseña:</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  {/* Edad y Fecha de Nacimiento */}
-                  <div className="row mb-3">
-                    <div className="col-md-6 mb-3 mb-md-0">
-                      <label className="form-label fw-bold">Edad:</label>
                       <input
-                        type="number"
+                        type="text"
+                        name="num_documento"
                         className="form-control"
-                        name="edad"
-                        value={formData.edad}
-                        onChange={handleInputChange}
-                        min="1"
+                        value={candidatoData.num_documento}
+                        onChange={handleCandidatoChange}
+                        required
                       />
                     </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-bold">Fecha de Nacimiento:</label>
+
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Correo
+                      </label>
+
                       <input
-                        type="date"
+                        type="email"
+                        name="correo"
                         className="form-control"
-                        name="fechaNacimiento"
-                        value={formData.fechaNacimiento}
-                        onChange={handleInputChange}
+                        value={candidatoData.correo}
+                        onChange={handleCandidatoChange}
+                        required
                       />
                     </div>
-                  </div>
 
-                  {/* Nivel de Experiencia */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Nivel de experiencia (1 a 10): {formData.experiencia}</label>
-                    <input
-                      type="range"
-                      className="form-range"
-                      name="experiencia"
-                      min="1"
-                      max="10"
-                      value={formData.experiencia}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Nombre
+                      </label>
 
-                  {/* Vacante */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Vacante:</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="Vacante"
-                      value={formData.vacante}
-                      onChange={handleInputChange}
-                      placeholder="Ej. Ingeniero de software"
-                      required
-                    />
-                  </div>
-                  
-                  {/* Lenguajes que conoce */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold d-block">Lenguajes que conoce:</label>
-                    {['JS', 'Python', 'Java'].map((lang) => (
-                      <div className="form-check form-check-inline" key={lang}>
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          id={`lang-${lang}`}
-                          name="lenguajes"
-                          value={lang}
-                          checked={formData.lenguajes.includes(lang)}
-                          onChange={handleInputChange}
-                        />
-                        <label className="form-check-label" htmlFor={`lang-${lang}`}>
-                          {lang}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Modalidad */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold d-block">Modalidad:</label>
-                    <div className="form-check form-check-inline">
                       <input
-                        className="form-check-input"
-                        type="radio"
-                        id="presencial"
-                        name="modalidad"
-                        value="presencial"
-                        checked={formData.modalidad === 'presencial'}
-                        onChange={handleInputChange}
+                        type="text"
+                        name="nombre"
+                        className="form-control"
+                        value={candidatoData.nombre}
+                        onChange={handleCandidatoChange}
+                        required
                       />
-                      <label className="form-check-label" htmlFor="presencial">Presencial</label>
                     </div>
-                    <div className="form-check form-check-inline">
+
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Apellido
+                      </label>
+
                       <input
-                        className="form-check-input"
-                        type="radio"
-                        id="virtual"
-                        name="modalidad"
-                        value="virtual"
-                        checked={formData.modalidad === 'virtual'}
-                        onChange={handleInputChange}
+                        type="text"
+                        name="apellido"
+                        className="form-control"
+                        value={candidatoData.apellido}
+                        onChange={handleCandidatoChange}
+                        required
                       />
-                      <label className="form-check-label" htmlFor="virtual">Virtual</label>
+                    </div>
+
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Teléfono
+                      </label>
+
+                      <input
+                        type="tel"
+                        name="telefono"
+                        className="form-control"
+                        value={candidatoData.telefono}
+                        onChange={handleCandidatoChange}
+                      />
+                    </div>
+
+                    <div className="col-12 mb-3">
+                      <label className="form-label">
+                        Perfil profesional
+                      </label>
+
+                      <textarea
+                        name="perfil"
+                        className="form-control"
+                        rows="4"
+                        value={candidatoData.perfil}
+                        onChange={handleCandidatoChange}
+                        placeholder="Describe brevemente tu perfil profesional..."
+                      />
                     </div>
                   </div>
 
-                  {/* País */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">País:</label>
-                    <select
-                      className="form-select"
-                      name="pais"
-                      value={formData.pais}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Selecciona tu país</option>
-                      <option value="colombia">Colombia</option>
-                      <option value="mexico">México</option>
-                    </select>
-                  </div>
-
-                  {/* Color Favorito */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold me-2">Color favorito:</label>
-                    <input
-                      type="color"
-                      className="form-control form-control-color d-inline-block align-middle"
-                      name="color"
-                      value={formData.color}
-                      onChange={handleInputChange}
-                      title="Elige tu color"
-                    />
-                  </div>
-
-                  {/* Archivo */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Foto de perfil:</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      name="archivo"
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  {/* Términos y Condiciones */}
-                  <div className="mb-4 form-check">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="terminos"
-                      name="terminos"
-                      checked={formData.terminos}
-                      onChange={handleInputChange}
-                      required
-                    />
-                    <label className="form-check-label" htmlFor="terminos">
-                      Aceptar términos y condiciones
-                    </label>
-                  </div>
-
-                  <button type="submit" className="btn btn-primary w-100 fw-bold">
-                    🚀 Guardar postulacion
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                  >
+                    💾 Guardar Perfil
                   </button>
                 </form>
               </div>
@@ -496,27 +919,512 @@ function App() {
           </section>
         )}
 
-        {/* VISTA 3: MÓDULO EN CONSTRUCCIÓN */}
-        {vistaActual === 'reportes' && (
-          <UnderConstruction 
-            titulo="Módulo de Reportes" 
-            mensaje="Esta sección estará disponible en la próxima versión de EmpleoLink." 
-          />
+        {/* ==================================================
+            VISTA VACANTES - CONTRATISTA
+        ================================================== */}
+
+        {vistaActual === 'vacantes' && (
+          <section>
+            {!tieneRol(['contratista']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div>
+                <h2 className="mb-4">
+                  🔎 Vacantes Disponibles
+                </h2>
+
+                <div className="alert alert-info">
+                  <strong>Información:</strong> aquí se mostrarán
+                  las vacantes almacenadas en la tabla{' '}
+                  <code>vacante</code>.
+                </div>
+
+                <div className="card shadow-sm mb-3">
+                  <div className="card-body">
+                    <h5>
+                      💻 Desarrollador de Software
+                    </h5>
+
+                    <p>
+                      Vacante de ejemplo para visualizar la
+                      estructura del módulo.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() =>
+                        setVistaActual('detalleVacante')
+                      }
+                    >
+                      Ver detalle
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
-        {/* Contador Vite de prueba */}
-        <div className="text-center mt-4">
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => setCount((c) => c + 1)}
-          >
-            Count is {count}
-          </button>
-        </div>
+        {/* ==================================================
+            DETALLE DE VACANTE
+        ================================================== */}
+
+        {vistaActual === 'detalleVacante' && (
+          <section>
+            {!tieneRol(['contratista']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div className="card shadow p-4">
+                <h2>
+                  💻 Detalle de Vacante
+                </h2>
+
+                <hr />
+
+                <h4>
+                  Desarrollador de Software
+                </h4>
+
+                <p>
+                  Información detallada de la vacante.
+                </p>
+
+                <p>
+                  <strong>Salario:</strong>{' '}
+                  Se cargará desde Supabase.
+                </p>
+
+                <p>
+                  <strong>Descripción:</strong>{' '}
+                  Se cargará desde Supabase.
+                </p>
+
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() =>
+                    setVistaActual('postularse')
+                  }
+                >
+                  🚀 Postularme
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            POSTULARSE
+        ================================================== */}
+
+        {vistaActual === 'postularse' && (
+          <section>
+            {!tieneRol(['contratista']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div className="card shadow p-4 text-center">
+                <h2>
+                  🚀 Postulación
+                </h2>
+
+                <p className="text-secondary">
+                  Estás a punto de realizar una postulación.
+                </p>
+
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() =>
+                    alert(
+                      'Postulación preparada. Falta conectarla con la tabla postulaciones.'
+                    )
+                  }
+                >
+                  Confirmar Postulación
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            MIS POSTULACIONES
+        ================================================== */}
+
+        {vistaActual === 'postulaciones' && (
+          <section>
+            {!tieneRol(['contratista']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div>
+                <h2 className="mb-4">
+                  📄 Mis Postulaciones
+                </h2>
+
+                <div className="alert alert-info">
+                  Aquí se mostrarán las postulaciones del
+                  contratista desde la tabla{' '}
+                  <code>postulaciones</code>.
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            REGISTRO DE EMPRESA
+        ================================================== */}
+
+        {vistaActual === 'empresa' && (
+          <section>
+            {!tieneRol(['empleado']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div className="card shadow p-4">
+                <h2 className="mb-4">
+                  🏢 Registrar Empresa
+                </h2>
+
+                <form onSubmit={handleEmpresaSubmit}>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Código de empresa
+                    </label>
+
+                    <input
+                      type="text"
+                      name="cod_empresa"
+                      className="form-control"
+                      value={empresaData.cod_empresa}
+                      onChange={handleEmpresaChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Nombre de la empresa
+                    </label>
+
+                    <input
+                      type="text"
+                      name="nombre_empresa"
+                      className="form-control"
+                      value={empresaData.nombre_empresa}
+                      onChange={handleEmpresaChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">
+                      NIT / RUT
+                    </label>
+
+                    <input
+                      type="text"
+                      name="nit_rut"
+                      className="form-control"
+                      value={empresaData.nit_rut}
+                      onChange={handleEmpresaChange}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                  >
+                    💾 Registrar Empresa
+                  </button>
+                </form>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            CREAR VACANTE - EMPLEADO
+        ================================================== */}
+
+        {vistaActual === 'vacante' && (
+          <section>
+            {!tieneRol(['empleado']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div className="card shadow p-4">
+                <h2 className="mb-4">
+                  📝 Crear Nueva Vacante
+                </h2>
+
+                <div className="alert alert-primary">
+                  <strong>Rol:</strong> Empleado
+                  <br />
+                  Esta información será almacenada en la
+                  tabla <code>vacante</code>.
+                </div>
+
+                <form onSubmit={handleVacanteSubmit}>
+                  {/* TÍTULO */}
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">
+                      Título de la vacante
+                    </label>
+
+                    <input
+                      type="text"
+                      name="titulo"
+                      className="form-control"
+                      value={vacanteData.titulo}
+                      onChange={handleVacanteChange}
+                      placeholder="Ej. Desarrollador de Software"
+                      required
+                    />
+                  </div>
+
+                  {/* SALARIO */}
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">
+                      Salario
+                    </label>
+
+                    <input
+                      type="number"
+                      name="salario"
+                      className="form-control"
+                      value={vacanteData.salario}
+                      onChange={handleVacanteChange}
+                      placeholder="Ej. 3000000"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  {/* EMPRESA */}
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">
+                      Código de empresa
+                    </label>
+
+                    <input
+                      type="text"
+                      name="cod_empresa"
+                      className="form-control"
+                      value={vacanteData.cod_empresa}
+                      onChange={handleVacanteChange}
+                      placeholder="Código de la empresa"
+                      required
+                    />
+                  </div>
+
+                  {/* DESCRIPCIÓN */}
+
+                  <div className="mb-4">
+                    <label className="form-label fw-bold">
+                      Descripción
+                    </label>
+
+                    <textarea
+                      name="descripcion"
+                      className="form-control"
+                      rows="6"
+                      value={vacanteData.descripcion}
+                      onChange={handleVacanteChange}
+                      placeholder="Describe las funciones, requisitos y condiciones de la vacante..."
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100 fw-bold"
+                  >
+                    🚀 Crear Vacante
+                  </button>
+                </form>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            VER POSTULANTES - EMPLEADO
+        ================================================== */}
+
+        {vistaActual === 'postulantes' && (
+          <section>
+            {!tieneRol(['empleado']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div>
+                <h2 className="mb-4">
+                  👥 Postulantes
+                </h2>
+
+                <div className="alert alert-info">
+                  Aquí se consultarán los registros de{' '}
+                  <code>postulaciones</code> relacionados con
+                  <code>candidato</code>.
+                </div>
+
+                <div className="card shadow-sm">
+                  <div className="card-body">
+                    <h5>
+                      Módulo de postulantes
+                    </h5>
+
+                    <p>
+                      En la siguiente etapa se conectará este
+                      módulo con Supabase para consultar los
+                      candidatos.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() =>
+                        alert(
+                          'Aquí posteriormente se actualizará estado_proceso.'
+                        )
+                      }
+                    >
+                      Actualizar estado del proceso
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            GESTIÓN DE USUARIOS - ADMINISTRADOR
+        ================================================== */}
+
+        {vistaActual === 'usuarios' && (
+          <section>
+            {!tieneRol(['administrador']) ? (
+              <AccesoDenegado />
+            ) : (
+              <div>
+                <h2 className="mb-4">
+                  🛡️ Gestión de Usuarios
+                </h2>
+
+                <div className="alert alert-warning">
+                  <strong>Administrador:</strong> esta sección
+                  estará conectada a la tabla{' '}
+                  <code>usuarios_roles</code>.
+                </div>
+
+                <div className="card shadow-sm">
+                  <div className="card-body">
+                    <h5>
+                      Administración de roles
+                    </h5>
+
+                    <p>
+                      Aquí el administrador podrá consultar y
+                      modificar los roles de los usuarios.
+                    </p>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover">
+                        <thead className="table-dark">
+                          <tr>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Acción</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          <tr>
+                            <td>Usuario autenticado</td>
+                            <td>
+                              <span className="badge bg-primary">
+                                {rolUsuario}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-warning"
+                                onClick={() =>
+                                  alert(
+                                    'Esta acción se conectará con usuarios_roles.'
+                                  )
+                                }
+                              >
+                                Cambiar rol
+                              </button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==================================================
+            REPORTES
+        ================================================== */}
+
+        {vistaActual === 'reportes' && (
+          <section>
+            {!tieneRol(['administrador']) ? (
+              <AccesoDenegado />
+            ) : (
+              <UnderConstruction
+                titulo="Módulo de Reportes"
+                mensaje="Esta sección estará disponible en la próxima versión de EmpleoLink."
+              />
+            )}
+          </section>
+        )}
       </main>
     </>
   )
 }
 
+// ======================================================
+// COMPONENTE DE ACCESO DENEGADO
+// ======================================================
+
+function AccesoDenegado() {
+  return (
+    <div
+      className="alert alert-danger text-center shadow-sm"
+      role="alert"
+    >
+      <h4 className="alert-heading">
+        🔒 Acceso restringido
+      </h4>
+
+      <p>
+        No tienes permisos para acceder a esta sección.
+      </p>
+
+      <hr />
+
+      <p className="mb-0">
+        Verifica que tu usuario tenga el rol correspondiente.
+      </p>
+    </div>
+  )
+}
+
+// ======================================================
+// EXPORTACIÓN
+// ======================================================
+
 export default App
+```
